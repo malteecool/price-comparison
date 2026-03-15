@@ -23,12 +23,14 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json([], { status: 500 })
 
-  const results: SearchResult[] = data.map(p => ({
+  type Row = { id: string; name: string; brand: string | null; prices: { price: number }[] }
+
+  const results: SearchResult[] = (data as Row[]).map(p => ({
     id: p.id,
     name: p.name,
     brand: p.brand,
     lowestPrice: p.prices.length > 0
-      ? Math.min(...(p.prices as { price: number }[]).map(x => x.price))
+      ? Math.min(...p.prices.map(x => x.price))
       : null,
   }))
 

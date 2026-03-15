@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  type TooltipProps,
 } from 'recharts'
 import type { PriceHistoryWithSupplier } from '@/lib/database.types'
 
@@ -46,7 +45,12 @@ function formatSEK(value: number) {
   }).format(value)
 }
 
-function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+type CustomTooltipProps = {
+  active?: boolean
+  payload?: { payload: ChartPoint }[]
+}
+
+function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
   const point = payload[0].payload as ChartPoint
   return (
