@@ -14,6 +14,7 @@ export type Database = {
           id: string
           name: string
           slug: string
+          parent_id: string | null
         }
       }
       products: {
@@ -56,6 +57,7 @@ export type Database = {
 // Convenience types used across the app
 export type Supplier = Database['public']['Tables']['suppliers']['Row']
 export type Category = Database['public']['Tables']['categories']['Row']
+export type CategoryNode = Category & { children: Category[] }
 export type Product = Database['public']['Tables']['products']['Row']
 export type Price = Database['public']['Tables']['prices']['Row']
 export type PriceHistory = Database['public']['Tables']['price_history']['Row']

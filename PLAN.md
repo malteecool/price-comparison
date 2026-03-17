@@ -24,7 +24,7 @@ Update it as steps are completed or priorities shift.
 - [x] **Search** — wire up the search bar to filter products by name/brand (server-side, via query param `?q=`)
 - [x] **Product images** — add image support to the products table and display in cards/detail page
 - [x] **Price history** — add a `price_history` table and a chart on the product detail page
-- [ ] **Category navigation dropdown** — header dropdown with categories and subcategories (e.g. TV → LCD, OLED, QLED). Requires: adding a `subcategories` table (or a `parent_id` self-reference on `categories`), updating the schema/seed, and building a hover/click dropdown in the header that filters products by subcategory.
+- [x] **Category navigation dropdown** — header dropdown with categories and subcategories using `parent_id` self-reference on `categories` (Option A). Products now point to subcategories. Header has hover dropdown via `CategoryNav`. Category pills on home page expand to show subcategory pills when a parent is active.
 - [ ] **Scraping / data ingestion** — cron job or script to populate real prices from Swedish retailers
 
 ---

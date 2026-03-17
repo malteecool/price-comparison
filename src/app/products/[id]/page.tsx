@@ -2,10 +2,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProduct, getPriceHistory } from '@/lib/api'
 import { getLocale, getTranslations } from '@/lib/i18n'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { Header } from '@/components/Header'
 import { ProductImage } from '@/components/ProductImage'
 import { PriceHistoryChart } from '@/components/PriceHistoryChart'
 import { SpecsTable } from '@/components/SpecsTable'
+import { CompareSection } from '@/components/CompareSection'
 import { SPEC_TEMPLATES } from '@/lib/specs'
 import type { PriceWithSupplier } from '@/lib/database.types'
 
@@ -63,16 +64,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const highestPrice = sorted[sorted.length - 1]?.price ?? null
   const savings = lowestPrice !== null && highestPrice !== null ? highestPrice - lowestPrice : null
 
+  const categorySlug = product.category?.slug ?? ''
+  const rawSpecTemplate = SPEC_TEMPLATES[categorySlug] ?? []
+  const resolvedSpecTemplate = rawSpecTemplate.map(f => ({ key: f.key, label: t(f.i18nKey) }))
+
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-foreground/10 px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold tracking-tight">
-            {t('app.name')}
-          </Link>
-          <LanguageSwitcher current={locale} />
-        </div>
-      </header>
+      <Header locale={locale} appName={t('app.name')} />
 
       <div className="max-w-3xl mx-auto px-6 py-8">
         <Link href="/" className="text-sm text-foreground/50 hover:text-foreground mb-6 inline-block">
@@ -105,7 +103,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         {/* Specs */}
         <SpecsTable
           specs={product.specs}
-          template={SPEC_TEMPLATES[product.category?.slug ?? ''] ?? []}
+          template={rawSpecTemplate}
           t={t}
           labelTitle={t('specs.title')}
         />
@@ -131,6 +129,26 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           history={history}
           labelTitle={t('chart.title')}
           labelNoData={t('chart.no_data')}
+        />
+
+        {/* Compare section */}
+        <CompareSection
+          product={product}
+          categorySlug={categorySlug}
+          specTemplate={resolvedSpecTemplate}
+          labels={{
+            title: t('compare.title'),
+            searchPlaceholder: t('compare.search_placeholder'),
+            prompt: t('compare.prompt'),
+            clear: t('compare.clear'),
+            noResults: t('compare.no_results'),
+            specsTitle: t('specs.title'),
+            lowestPrice: t('product.lowest_price'),
+            saveUpTo: t('product.save_up_to'),
+            storeCountOne: t('product.store_count_one'),
+            storeCountOther: t('product.store_count_other'),
+            noPrices: t('product.no_prices'),
+          }}
         />
 
         {/* Price list */}

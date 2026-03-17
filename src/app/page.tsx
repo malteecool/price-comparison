@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { getCategories, getProducts } from '@/lib/api'
+import { getCategoryTree, getProducts } from '@/lib/api'
 import { getLocale, getTranslations } from '@/lib/i18n'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { Header } from '@/components/Header'
 import { SearchBar } from '@/components/SearchBar'
 import { ProductImage } from '@/components/ProductImage'
 import type { ProductWithPrices } from '@/lib/database.types'
@@ -35,9 +35,9 @@ export default async function Home({
 }) {
   const { category, q } = await searchParams
 
-  const [locale, categories, products] = await Promise.all([
+  const [locale, categoryTree, products] = await Promise.all([
     getLocale(),
-    getCategories(),
+    getCategoryTree(),
     getProducts({ categorySlug: category, searchQuery: q }),
   ])
 
@@ -48,13 +48,7 @@ export default async function Home({
   return (
     <main className="min-h-screen bg-background text-foreground">
 
-      {/* Header */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-foreground/8">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          {t('app.name')}
-        </Link>
-        <LanguageSwitcher current={locale} />
-      </header>
+      <Header locale={locale} appName={t('app.name')} />
 
       {/* Hero */}
       <section
@@ -78,7 +72,7 @@ export default async function Home({
       </section>
 
       {/* Category filter */}
-      <div className="border-b border-foreground/8 px-6 py-4">
+      <div className="border-b border-foreground/8 px-6 py-3">
         <div className="max-w-5xl mx-auto flex gap-2 flex-wrap">
           <Link
             href="/"
@@ -90,19 +84,38 @@ export default async function Home({
           >
             {t('category.all')}
           </Link>
-          {categories.map(cat => (
-            <Link
-              key={cat.id}
-              href={`/?category=${cat.slug}`}
-              className={`px-4 py-1.5 rounded-full text-sm border transition-colors ${
-                category === cat.slug
-                  ? 'bg-foreground text-background border-foreground'
-                  : 'border-foreground/15 hover:border-foreground/40'
-              }`}
-            >
-              {cat.name}
-            </Link>
-          ))}
+          {categoryTree.map(parent => {
+            const isParentActive = category === parent.slug
+            const activeChild = parent.children.find(c => c.slug === category)
+            const isAnyActive = isParentActive || Boolean(activeChild)
+            return (
+              <div key={parent.id} className="flex items-center gap-1">
+                <Link
+                  href={`/?category=${parent.slug}`}
+                  className={`px-4 py-1.5 rounded-full text-sm border transition-colors ${
+                    isAnyActive
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-foreground/15 hover:border-foreground/40'
+                  }`}
+                >
+                  {parent.name}
+                </Link>
+                {isAnyActive && parent.children.length > 0 && parent.children.map(child => (
+                  <Link
+                    key={child.id}
+                    href={`/?category=${child.slug}`}
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                      category === child.slug
+                        ? 'bg-foreground/80 text-background border-foreground/80'
+                        : 'border-foreground/10 text-foreground/60 hover:border-foreground/30'
+                    }`}
+                  >
+                    {child.name}
+                  </Link>
+                ))}
+              </div>
+            )
+          })}
         </div>
       </div>
 

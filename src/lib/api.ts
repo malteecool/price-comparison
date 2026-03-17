@@ -1,14 +1,24 @@
 import { supabase } from './supabase'
-import type { Category, PriceHistoryWithSupplier, ProductWithPrices } from './database.types'
+import type { Category, CategoryNode, PriceHistoryWithSupplier, ProductWithPrices } from './database.types'
+
+async function fetchAllCategories(): Promise<Category[]> {
+  const { data, error } = await supabase.from('categories').select('*').order('name')
+  if (error) throw error
+  return data as Category[]
+}
+
+export async function getCategoryTree(): Promise<CategoryNode[]> {
+  const all = await fetchAllCategories()
+  const parents = all.filter(c => c.parent_id === null)
+  const children = all.filter(c => c.parent_id !== null)
+  return parents.map(parent => ({
+    ...parent,
+    children: children.filter(c => c.parent_id === parent.id),
+  }))
+}
 
 export async function getCategories(): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name')
-
-  if (error) throw error
-  return data
+  return fetchAllCategories()
 }
 
 export async function getProducts(options: {
@@ -16,6 +26,24 @@ export async function getProducts(options: {
   searchQuery?: string
 } = {}): Promise<ProductWithPrices[]> {
   const { categorySlug, searchQuery } = options
+
+  let categoryIds: string[] | null = null
+
+  if (categorySlug) {
+    const all = await fetchAllCategories()
+    const target = all.find(c => c.slug === categorySlug)
+    if (target) {
+      if (target.parent_id === null) {
+        // Top-level category: include its own ID plus all children
+        const childIds = all.filter(c => c.parent_id === target.id).map(c => c.id)
+        categoryIds = childIds.length > 0 ? childIds : [target.id]
+      } else {
+        categoryIds = [target.id]
+      }
+    } else {
+      return []
+    }
+  }
 
   let query = supabase
     .from('products')
@@ -30,17 +58,13 @@ export async function getProducts(options: {
     query = query.or(`name.ilike.%${searchQuery}%,brand.ilike.%${searchQuery}%`)
   }
 
-  if (categorySlug) {
-    query = query.eq('category.slug', categorySlug)
+  if (categoryIds) {
+    query = query.in('category_id', categoryIds)
   }
 
   const { data, error } = await query
-
   if (error) throw error
-  // Filter out products with no matching category when filtering by slug
-  return (data as ProductWithPrices[]).filter(p =>
-    categorySlug ? p.category?.slug === categorySlug : true
-  )
+  return data as ProductWithPrices[]
 }
 
 export async function getPriceHistory(productId: string): Promise<PriceHistoryWithSupplier[]> {
